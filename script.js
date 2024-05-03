@@ -11,68 +11,86 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 
-let map, mapEvent;
+class App {
+  workouts = [];
+  #map;
+  #mapEvent;
 
-if (navigator.geolocation)
-  navigator.geolocation.getCurrentPosition(
-    function (position) {
-      const { latitude, longitude } = position.coords;
-      console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
+  constructor() {
+    this.#getPosition();
+    form.addEventListener('submit', this.#newWorkout.bind(this));
+    inputType.addEventListener('change', this.#toggleElevationField);
+  }
 
-      const coords = [latitude, longitude];
+  #getPosition() {
+    if (navigator.geolocation)
+      navigator.geolocation.getCurrentPosition(
+        this.#loadMap.bind(this),
+        function () {
+          alert('Could not read your position!');
+        }
+      );
+  }
 
-      map = L.map('map').setView(coords, 13);
+  #loadMap(position) {
+    const { latitude, longitude } = position.coords;
+    console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
 
-      L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(map);
+    const coords = [latitude, longitude];
 
-      L.marker(coords)
-        .addTo(map)
-        .bindPopup('A pretty CSS popup.<br> Easily customizable.')
-        .openPopup();
+    console.log(this);
+    this.#map = L.map('map').setView(coords, 13);
 
-      map.on('click', function (mapE) {
-        mapEvent = mapE;
-        form.classList.remove('hidden');
-        inputDistance.focus();
-      });
-    },
-    function () {
-      alert('Could not read your position!');
-    }
-  );
+    L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(this.#map);
 
-form.addEventListener('submit', function (e) {
-  e.preventDefault();
+    L.marker(coords)
+      .addTo(this.#map)
+      .bindPopup('A pretty CSS popup.<br> Easily customizable.')
+      .openPopup();
 
-  // Display marker
-  console.log(mapEvent.latlng);
-  const { lat, lng } = mapEvent.latlng;
-  L.marker([lat, lng])
-    .addTo(map)
-    .bindPopup(
-      L.popup({
-        maxWidth: 250,
-        minWidth: 100,
-        autoClose: false,
-        closeOnClick: false,
-        className: 'running-popup',
-      })
-    )
-    .setPopupContent('Workout')
-    .openPopup();
+    this.#map.on('click', this.#showForm.bind(this));
+  }
 
-  // Clear inputs fields
-  inputDistance.value =
-    inputDuration.value =
-    inputCadence.value =
-    inputElevation.value =
-      '';
-});
+  #showForm(mapE) {
+    this.#mapEvent = mapE;
+    form.classList.remove('hidden');
+    inputDistance.focus();
+  }
 
-inputType.addEventListener('change', function () {
-  inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
-  inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
-});
+  #toggleElevationField() {
+    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
+  }
+
+  #newWorkout(e) {
+    e.preventDefault();
+
+    // Display marker
+    const { lat, lng } = this.#mapEvent.latlng;
+    L.marker([lat, lng])
+      .addTo(this.#map)
+      .bindPopup(
+        L.popup({
+          maxWidth: 250,
+          minWidth: 100,
+          autoClose: false,
+          closeOnClick: false,
+          className: 'running-popup',
+        })
+      )
+      .setPopupContent('Workout')
+      .openPopup();
+
+    // Clear inputs fields
+    inputDistance.value =
+      inputDuration.value =
+      inputCadence.value =
+      inputElevation.value =
+        '';
+  }
+}
+
+const app = new App();
