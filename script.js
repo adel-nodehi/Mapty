@@ -81,7 +81,13 @@ class App {
   #workouts = [];
 
   constructor() {
+    // Get user position
     this.#getPosition();
+
+    // Get data from local storage
+    this.#getLocalStorage();
+
+    // Attach handlers
     form.addEventListener('submit', this.#newWorkout.bind(this));
     inputType.addEventListener('change', this.#toggleElevationField);
     containerWorkouts.addEventListener('click', this.#moveToPopup.bind(this));
@@ -99,11 +105,9 @@ class App {
 
   #loadMap(position) {
     const { latitude, longitude } = position.coords;
-    console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
 
     const coords = [latitude, longitude];
 
-    console.log(this);
     this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
 
     L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
@@ -112,6 +116,10 @@ class App {
     }).addTo(this.#map);
 
     this.#map.on('click', this.#showForm.bind(this));
+
+    this.#workouts.forEach(work => {
+      this.#renderWorkoutMarker(work);
+    });
   }
 
   #showForm(mapE) {
@@ -189,6 +197,9 @@ class App {
 
     // Clear input fields + hide the form
     this.#hideForm();
+
+    // Set local storage to all workouts
+    this.#setLocalStorage();
   }
 
   #renderWorkoutMarker(workout) {
@@ -270,15 +281,34 @@ class App {
       work => work.id === workoutEl.dataset.id
     );
 
-    console.log(workout);
-
     this.#map.setView(workout.coords, this.#mapZoomLevel, {
       animate: true,
       duration: 1,
     });
 
     // Using the public interface
-    workout.click();
+    // workout.click();  // important #0000ff
+  }
+
+  #setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+
+  #getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+
+    if (!data) return;
+
+    this.#workouts = data;
+
+    this.#workouts.forEach(work => {
+      this.#renderWorckout(work);
+    });
+  }
+
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
   }
 }
 
